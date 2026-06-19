@@ -1,0 +1,106 @@
+# Test Failure Scenarios
+# Apply with: kubectl apply -f test-failures.yaml
+# Delete with: kubectl delete -f test-failures.yaml
+
+---
+# Scenario 1: CrashLoopBackOff — missing env var
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-crashloop
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-crashloop
+  template:
+    metadata:
+      labels:
+        app: test-crashloop
+    spec:
+      containers:
+        - name: app
+          image: busybox
+          command: ["sh", "-c", "echo DATABASE_URL=$DATABASE_URL; [ -z \"$DATABASE_URL\" ] && echo 'ERROR: DATABASE_URL missing' && exit 1"]
+          env: []
+
+---
+# Scenario 2: ImagePullBackOff — invalid image tag
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-imagepull
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-imagepull
+  template:
+    metadata:
+      labels:
+        app: test-imagepull
+    spec:
+      containers:
+        - name: app
+          image: nginx:this-tag-does-not-exist-99999
+
+---
+# Scenario 3: OOMKilled — memory limit too low
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-oomkilled
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-oomkilled
+  template:
+    metadata:
+      labels:
+        app: test-oomkilled
+    spec:
+      containers:
+        - name: app
+          image: polinux/stress
+          command: ["stress", "--vm", "1", "--vm-bytes", "200M"]
+          resources:
+            limits:
+              memory: "10Mi"
+
+---
+# Scenario 4: Service selector mismatch — no endpoints
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-svc-mismatch
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-svc-mismatch
+  template:
+    metadata:
+      labels:
+        app: test-svc-mismatch
+    spec:
+      containers:
+        - name: app
+          image: nginx:stable
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-svc-mismatch
+  namespace: default
+spec:
+  selector:
+    app: wrong-label   # intentional mismatch
+  ports:
+    - port: 80
+      targetPort: 80
