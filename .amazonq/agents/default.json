@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "insforge": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@insforge/mcp@latest"
+      ],
+      "env": {
+        "API_KEY": "ik_7637bd6049a808448d530db0f1bec83d",
+        "API_BASE_URL": "https://hve5hrx5.ap-southeast.insforge.app"
+      }
+    }
+  },
+  "name": "q_ide_default",
+  "prompt": "",
+  "toolAliases": {},
+  "useLegacyMcpJson": true
+}
